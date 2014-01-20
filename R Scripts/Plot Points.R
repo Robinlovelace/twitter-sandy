@@ -1,0 +1,5 @@
+library(maps)
+tweets <- read.csv(file.choose(), sep=",")
+map(database="state", col="#cccccc")
+symbols(tweets$latitude, tweets$longitude, bg="#e2373f", fg="#ffffff", circles=rep(1, length(tweets$longitude)), inches=0.04, add=TRUE)
+plot(tweets$latitude, tweets$longitude)

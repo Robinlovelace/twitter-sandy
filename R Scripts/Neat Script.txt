@@ -1,0 +1,38 @@
+##PACKAGE
+library(geosphere)
+
+##Intermediate Points for Estimating Hurricane Location
+gcIntermediate(c(-sandyLongitudeA,sandyLatitudeA),c(-sandyLongitudeB,SandyLatitudeB), n=20, addStartEnd=TRUE)
+
+##BEARINGS
+bearing(c(tweetLatitude,-tweetLongitude),c(sandyLatitude,-sandyLongitude))
+finalBearing(c(-tweetLongitude,tweetLatitude),c(-tweetLongitude,tweetLatitude))
+
+##DISTANCE
+distVincentyEllipsoid(c(-sandyLongitude,sandyLatitude),c(-tweetLongitude,tweetLatitude), a=6378137, b=6356752.3142, f=1/298.257223563)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+##Set working directory and read in NOAA Coordinates
+setwd("C:\\Users\\ee12nr\\Desktop\\")
+noaaCoordinates <- read.csv("noaaCoordinates.txt",header=T)
+
+##Create a dataframe of intermediate coordinates for the first row
+intermediate1 <- gcIntermediate(c(noaaCoordinates[1,4],noaaCoordinates[1,3]),c(noaaCoordinates[2,4],noaaCoordinates[2,3]), n=5, addStartEnd=FALSE)
+write.csv(intermediate1,"C:\\Users\\ee12nr\\Desktop\\r_results.txt")
+
+
+
+
+
+=MID(S2,6,2)&"-"&MID(S2,9,2)&" "&MID(S2,12,2)&":"&MID(S2,15,2)
+
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How To's:
+##noaaCoordinates$latitude Reads latitude column
+##noaaCoordinates[1,3] Reads latitude from first row
+##noaaCoordinates[1,4] Reads longitude from first row
