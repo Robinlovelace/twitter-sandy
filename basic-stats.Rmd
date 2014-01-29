@@ -1,0 +1,9 @@
+
+allGeo <- read.csv("allSandyGeo.csv") # load 65 Mb tweets file
+head(allGeo)
+
+##### Identifying false positives #####
+nameSand <- which(grepl("sandy", allGeo$actor.preferredUsername, ignore.case=T))
+allGeo$body[nameSand][1:20] 
+length(nameSand)
+length(which(grepl("sandy", allGeo$inReplyTo.link, ignore.case=T))) 

@@ -1,0 +1,77 @@
+Cleaning the Sandy Twitter data
+================================
+
+The purpose of this script is to do basic analysis of the Twitter data. 
+It has been found that the input data contains many 'false positives' that 
+need to be selectively filtered and removed, as they add noise to the results. 
+Once this has been done, basic statistics on the nature of tweets are calculated.
+Finally we finish with some visualisations of the data.
+
+## Loading the data
+
+```{r}
+allGeo <- read.csv("allSandyGeo.csv") # load 65 Mb tweets file
+head(allGeo)
+```
+
+## Identifying false positives
+
+It seems that the filter used to select the tweets mentioning hurricane Sandy was 
+very crude, harvesting all tweets that contain the character string "sandy" without 
+case sensitivity or check that it is the hurricane is the topic. 
+
+We can look at these false positives in a number of ways.
+
+### User names containing Sandy
+
+Users called Sandy are likely to refer to send tweets containing that text string 
+to talk about themselves or social events at their house: 
+
+```{r}
+nameSand <- which(grepl("sandy", allGeo$actor.preferredUsername, ignore.case=T)) # all Tweeters with sandy in their name
+allGeo$body[nameSand][1:20] # a look at these tweets shows that they are about people, not the hurricane
+length(nameSand) / nrow(allGeo) # these tweets make up only 0.03% of the tweets
+```
+
+More seriously, tweets
+sent to anyone whose name contains Sandy will be selected:
+```{r}
+nameLinkSand <- which(grepl("sandy", allGeo$inReplyTo.link, ignore.case=T)) # all tweets to sandys
+head(allGeo$body[nameLinkSand]) # again, these mention people, not the hurricane
+length(nameLinkSand)/nrow(allGeo) # 2.3% of tweets affected by this error
+```
+
+### Sandy not being a complete word
+
+Often the "sandy" string is part of a larger text string that does not
+refer to the hurricane ("hurricanesandy" is an exception with 
+`r length(which(grepl("hurricanesandy", allGeo$body, ignore.case=T)))` mentions).
+We can identify these false positives using regular expressions:
+
+```{r}
+sSandy <- which(grepl("sandy[[[:alnum:]]", allGeo$body, ignore.case=T))
+head(allGeo$body[sSandy], 20) # note that none of these tweets appear to be directly related to the hurricane
+length(sSandy)/nrow(allGeo) # 13% of tweets contain sandy followed by an alphanumeric character - unlikely to be the storm
+sSandyB <- which(grepl("[abcdfghijklmnopqrstuvwxyx0123456789]sandy", allGeo$body, ignore.case=T)) # sandy tags with alphanumeric prefix excluding e 
+head(allGeo$body[sSandyB], 20) # note that none of these tweets appear to be directly related to the hurricane
+length(sSandyB)/nrow(allGeo) # 5% of tweets contain sandy followed by an alphanumeric character - unlikely to be the storm
+```
+
+### Excluding the false positives
+
+It is suggested we exclude all the likely false positives identified in the previous steps:
+
+```{r}
+asGeo <- allGeo[-sSandy,]
+asGeo <- asGeo[-sSandyB,]
+asGeo <- asGeo[-nameLinkSand,]
+asGeo <- asGeo[-nameSand,]
+
+1 - nrow(asGeo)/nrow(allGeo)
+```
+
+The above code shows that 20% of the false positive tweets have now been removed.
+
+
+
+
