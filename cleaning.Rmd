@@ -1,6 +1,7 @@
 Cleaning the Sandy Twitter data
 ================================
 
+
 The purpose of this script is to do basic analysis of the Twitter data. 
 It has been found that the input data contains many 'false positives' that 
 need to be selectively filtered and removed, as they add noise to the results. 
