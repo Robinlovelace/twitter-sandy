@@ -1,0 +1,65 @@
+State-level aggregation
+========================================================
+
+This vignette demonstrates the geographical aggregation of 
+point data, to create choropleth maps summarising twitter data.
+
+## Load the state data
+
+```{r}
+library(rgdal)
+states <- readOGR(".", "states")
+summary(states)
+states <- spTransform(states, CRS("+init=epsg:4326"))
+states <- states[-which(grepl("Alask|Haw", as.character(states$STATE_NAME))),]
+tweets <- read.csv("1pSample.txt")
+plot(states)
+points(tweets$lon, tweets$lat, col="blue")
+```
+
+Convert the tweets into a spatial (S4) class
+
+```{r}
+tweets <- SpatialPointsDataFrame(coords=matrix(c(tweets$lon, tweets$lat), ncol=2),data=tweets, proj4string=CRS("+init=epsg:4326"))
+```
+
+Now lets aggregate by number of tweets.
+
+```{r}
+statesAg1 <- aggregate(tweets["X"], states, length)
+```
+
+Aggregating by average n. friends in territory:
+
+```{r}
+statesAg2 <- aggregate(tweets["actor.friendsCount"], by = states, mean)
+statesAg1$friends <- statesAg2$actor.friendsCount
+statesAg1$id <- as.character(states$STATE_NAME)
+```
+
+## Visualisation
+
+Preparing the data to plot with ggplot2.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+sf <- fortify(statesAg1, region="id")
+head(sf)
+head(statesAg1@data)
+sf <- inner_join(sf, statesAg1@data, by="id")
+head(sf)
+```
+
+Plot.
+
+```{r}
+ggplot(sf, aes(long, lat, fill=X, group=group)) + geom_polygon() +
+  scale_fill_gradient(low = "green", high = "red") + coord_map()
+
+ggplot(sf, aes(long, lat, fill=friends, group=group)) + geom_polygon() +
+  scale_fill_gradient(low = "blue", high = "orange") + coord_map()
+```
+
+
+
