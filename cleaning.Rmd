@@ -67,6 +67,8 @@ asGeo <- allGeo[-sSandy,]
 asGeo <- asGeo[-sSandyB,]
 asGeo <- asGeo[-nameLinkSand,]
 asGeo <- asGeo[-nameSand,]
+object.size(asGeo)/1000000
+save(asGeo, file="JSON GZ/asGeo.RData")
 
 1 - nrow(asGeo)/nrow(allGeo)
 asSample <- asGeo[sample(row.names(asGeo), size=1000),]
