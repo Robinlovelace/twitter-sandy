@@ -3,7 +3,6 @@ Analysis of Sandy Tweets paper
 
 ## Introduction - Research questions
 
-- 
 - What proportion of the population tweeted about Sandy in different areas? 
 - Is the temporal distribution of Sandy tweets different from all tweets? 
 - How does this vary by distance to the eye? (we need a 'control' datasets of tweets for comparison - do we have one?) 
@@ -13,6 +12,16 @@ Analysis of Sandy Tweets paper
 
 A bit on open code - make available on GitHub?
 Relation to previous work
+
+
+```r
+x <- 1:10
+plot(x, sin(x))
+```
+
+![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1.png) 
+
+
 
 ## Data and methods
 
