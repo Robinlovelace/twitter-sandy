@@ -3,7 +3,7 @@
 ########################################################################################
 
 ##Set the working directory where the files will be read from & saved to
-setwd("~/Documents/1 Sandy/3 R Scripts/")
+setwd("~/Documents/1 Sandy/7 Repos/twitter-sandy/")
 
 #### HURRICANE PATH ####################################################################
 
@@ -133,10 +133,11 @@ bearingToTweet <-read.csv("bearingToTweet.csv",header=T)
 bearingToTweet = NULL
 for (i in 1:129936) {
   bearingToTweet[i] =
-    bearing(c(pathTweets[i,4],pathTweets[i,3]),c(pathTweets[i,6],pathTweets[i,5]))
+    bearing(c(pathTweets[i,3],pathTweets[i,2]),c(pathTweets[i,23],pathTweets[i,2]))
 }
 #x <- lapply(bearingToTweet, function(x) { x[1:162343] }) #Adds NA's remaining rows
-pathTweets <- cbind(pathTweets, bearingToTweet)
+pathTweets$bearing <- NA
+pathTweets$bearing[1:129936] <- bearingToTweet
 write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
 
 ##Calculate initial bearing of hurricane
