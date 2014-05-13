@@ -21,8 +21,6 @@ pathTweets <- cbind(pathTweets, km)
 write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
 
 ##Calculate initial bearing to tweet
-bearingToTweet <-read.csv("bearingToTweet.csv",header=T)
-##Or:
 bearingToTweet = NULL
 for (i in 1:129936) {
   bearingToTweet[i] =
