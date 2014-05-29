@@ -2,7 +2,7 @@
 pathTweets <- read.csv("pathTweets.csv",header=T)
 
 ###################
-## For US States - Working
+##1.1 For US States - Working
 ###################
 
 ## Import state shape files and ensure correct projection
@@ -28,7 +28,7 @@ for(i in 1:nrow(states)){
 }
 
 #################
-## For US Counties - Working; Source: http://forums.arcgis.com/threads/26330-Where-can-I-find-a-shapefile-with-all-US-counties-and-FIPS-code-for-each
+##1.2 For US Counties - Working; Source: http://forums.arcgis.com/threads/26330-Where-can-I-find-a-shapefile-with-all-US-counties-and-FIPS-code-for-each
 #################
 
 ## Import counties shape files and ensure correct projection
@@ -52,7 +52,7 @@ for(i in 1:nrow(counties)){
 # For census tract: https://www.census.gov/geo/maps-data/data/tiger.html
 
 ###################
-## For Countries - Not Working; Shape files from Natural Earth: http://www.naturalearthdata.com/downloads/
+##1.3 For Countries - Not Working; Shape files from Natural Earth: http://www.naturalearthdata.com/downloads/
 ###################
 
 ##Import country shape files and ensure correct projection
@@ -95,12 +95,13 @@ pathTweets$country[ as.integer(row.names(usTweets)) ] <- "United States"
 data.frame(countries@data$NAME)
 
 #################################################################################
-##Map by location
+##2.1 Map by location
 #################################################################################
 
 library(maps)
 library(ggplot2)
 library(plyr)
+library(RColorBrewer)
 
 # Map tweets by state name
 stateSubset <- subset(pathTweets, state == "California") 
@@ -120,7 +121,7 @@ plot(counties[which(grepl("27137", as.character(counties$FIPS))),])
 points(countySubset$tweet.lon, countySubset$tweet.lat, col="green",cex=.6)
 
 ############
-# Chloropleth map of States; See https://gist.github.com/cdesante/4252133
+#2.2 Chloropleth map of States; See https://gist.github.com/cdesante/4252133
 ############
 
 stateTweetFreq <- data.frame(table(pathTweets$state))
@@ -149,7 +150,7 @@ ggsave("figure/US-overview-rl.png", height=9, width=12)
 ggsave("figure/US-overview-rl-lowres.png", height=9, width=12, dpi=50)
 
 ############
-# Chloropleth map of counties
+#2.3 Chloropleth map of counties
 ############
 countyTweetFreq <- data.frame(table(pathTweets$FIPSCode))
 countyTweetFreq <- rename(countyTweetFreq, c("Var1"="fips", "Freq"="Freq"))
@@ -163,19 +164,24 @@ county.fips <- rename(county.fips, c("counties.data.NAME"="subregion","counties.
 county.fips$region <- tolower(county.fips$region)
 county.fips$subregion <- tolower(county.fips$subregion)
 countiesX <- merge(countiesX, county.fips, by=c("subregion","region"),all.x=TRUE)
-
-#Note that 1,400 rows of the countiesX df did not correspond to county.fips so have NA's - Need to sort
-choroC <- merge(countiesX, countyTweetFreq, by ="fips",all.x=TRUE)
+#To Sort: 1,400 rows of the countiesX df did not correspond to county.fips so have NA's
+#Next, there an issue in that we need to give all counties without any tweet Freq the
+#value of zero rather than NA. This requires subseting the rows that have no Freq first.
+choroC <- merge(countiesX, countyTweetFreq,by ="fips",all.x=TRUE)
+choroX <- merge(countiesX, countyTweetFreq,by ="fips",all.x=FALSE)
+choroY <- subset(choroC, !fips %in% choroX$fips)
+choroY$Freq <- 0
+#Append
+choroC <- rbind(choroX,choroY)
 choroC <- choroC[order(choroC$order), ]
-p <- qplot(long, lat, data = choroC, group = group, fill = log(Freq),geom = "polygon")
-p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
+p <- qplot(long, lat, data = choroC, group = group,fill = log(Freq),geom = "polygon")
+p <- p + scale_fill_gradient(low="red", high="green", name = "N. Tweets")
+#p <- p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
 p
 
-p + scale_fill_gradient(low = "green", high = "red",
-                        name="Num.\nTweets\n(log(n)")
-
-
-##Plot individual state
+#################
+##2.4 Plot counties in individual state
+#################
 stateSubset <- subset(choroC, region=="california")
 qplot(long, lat, data = stateSubset, group = group, fill = log(Freq),geom = "polygon")
 
