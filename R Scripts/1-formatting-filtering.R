@@ -3,7 +3,7 @@
 ########################################################################################
 
 ##Set the working directory where the files will be read from & saved to
-setwd("~/Documents/1 Sandy/7 Repos/twitter-sandy/")
+# setwd("~/Documents/1 Sandy/7 Repos/twitter-sandy/") # for Nick's setup
 
 #### HURRICANE PATH ####################################################################
 
