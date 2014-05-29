@@ -152,6 +152,7 @@ choroY$Freq <- 0
 choroC <- rbind(choroX,choroY)
 choroC <- choroC[order(choroC$order), ]
 p <- qplot(long, lat, data = choroC, group = group,fill = log(Freq),geom = "polygon")
+p <- p + scale_fill_gradient(low="red", high="green", name = "N. Tweets")
 #p <- p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
 p
 
