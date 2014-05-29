@@ -15,7 +15,19 @@ hurricanePath$utcTime <- as.POSIXct(as.character(hurricanePath$utc),"%Y-%m-%d %H
 ##Convert to Eastern Time using the format function (EDT UTC-4hrs; EST UTC-5hrs during winter)
 hurricanePath$easternTime <- format(hurricanePath$utcTime,tz="America/New_York", usetz=TRUE)
 
-# write.csv(file="hurricanePath.csv",x=hurricanePath, row.names=FALSE) # save
+##Calculate bearing of hurricane in any given minute
+library(geosphere)
+##Calculate initial bearing from each hurricane coordinate to its next coordinate
+bearingOfHurricane = NULL
+for (i in 1:9360)  
+  {
+  bearingOfHurricane[i] =
+    bearing(c(hurricanePath[i,2],hurricanePath[i,1]),c(hurricanePath[i+1,2],hurricanePath[i+1,1]))
+}
+hurricanePath$hurricaneBearing <- NA
+hurricanePath$hurricaneBearing[1:9360] <- bearingOfHurricane
+
+write.csv(file="hurricanePathWBearing.csv",x=hurricanePath, row.names=FALSE)
 
 #### TWEETS ############################################################################
 
@@ -86,7 +98,12 @@ hurricanePath$utc2 <- as.character(hurricanePath$utcTime)
 # filteredTweets$utc2 <- strtrim(filteredTweets$utc2, 16) # trim off seconds if needed
 summary(filteredTweets$utc2 %in% hurricanePath$utc2)
 
-pathTweets <- merge(filteredTweets, hurricanePath, by="utc2", all.x=T)
+
+summary(pathTweets$utcTime %in% hurricanePath$utcTime)
+
+pathTweets$hurricaneBearing <- NA
+pathTweets$bearing[1:129936] <- bearingToTweet
+pathTweets <- merge(pathTweets, hurricanePath, by="utcTime", all.x=T)
 write.csv(pathTweets, "pathTweets.csv")
 head(pathTweets)
 

@@ -20,37 +20,40 @@ km <- distance*0.001
 pathTweets <- cbind(pathTweets, km)
 write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
 
-##Calculate initial bearing to tweet
-bearingToTweet <-read.csv("bearingToTweet.csv",header=T)
-##Or:
+##Bearing of tweet from eye relative to north
 bearingToTweet = NULL
 for (i in 1:129936) {
   bearingToTweet[i] =
-    bearing(c(pathTweets[i,3],pathTweets[i,2]),c(pathTweets[i,23],pathTweets[i,2]))
+    bearing(c(pathTweets[i,23],pathTweets[i,22]),c(pathTweets[i,3],pathTweets[i,2]))
 }
-#x <- lapply(bearingToTweet, function(x) { x[1:162343] }) #Adds NA's remaining rows
-pathTweets$bearing <- NA
-pathTweets$bearing[1:129936] <- bearingToTweet
-write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
 
-##Calculate initial bearing of hurricane
-hurricanePathB <-read.csv("hurricanePathB.csv",header=T)
-pathTweets <- merge(pathTweets, hurricanePathB)
-write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
-bearingOfHurricane = NULL
-for (i in 1:129936) {
-  bearingOfHurricane[i] =
-    bearing(c(pathTweets[i,4],pathTweets[i,3]),c(pathTweets[i,26],pathTweets[i,25]))
-}
-write.csv(file="bearingOfHurricane.csv",x=bearingOfHurricane, row.names=FALSE)
-##Manually added NAs in Excel
-bearingOfHurricane <- read.csv("bearingOfHurricane.csv",header=T)
-pathTweets <- cbind(pathTweets, bearingOfHurricane)
-write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
-
+##Neaten things up
+##Remove superfluous columns from 'pathTweets'
+pathTweets$utcTime.y <- NULL
+pathTweets$utcTime.x <- NULL
+##Rename utc2 to utcTime
+library(plyr)
+pathTweets <- rename(pathTweets, c("utc2"="utcTime"))
 ##Save dataframe as CSV called pathTweets
 write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
 
+##Calculate bearing of tweets relative to bearing of hurricane
+pathTweets$relativeBearingX = pathTweets$bearing - pathTweets$hurricaneBearing
+
+relativeBearing = NULL
+for (i in 1:129931){
+  relativeBearing[i] =
+    if(pathTweets[i,26] < 0) {pathTweets[i,26] + 360}
+  else{pathTweets[i,26]}
+}
+pathTweets$relativeBearing <- NA
+pathTweets$relativeBearing[1:129931] <- relativeBearing
+
+##Remove superfluous columns from 'pathTweets'
+pathTweets$relativeBearingX <- NULL
+
+##Save dataframe as CSV called pathTweets
+write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
 
 ########################################################################################
 ##NOTES, GUIDANCE & REFERENCES:
@@ -59,7 +62,99 @@ write.csv(file="pathTweets.csv",x=pathTweets, row.names=FALSE)
 ########################################################################################
 
 ########################################################################################
-##STEP THREE: Basic Visualisations
+##Plot distance & bearing relative to hurricane eye: Close Up
+########################################################################################
+
+# Define function to calculate coordinates given distance and bearing
+get.coords <- function(a, d, x0, y0) {
+  a <- ifelse(a <= 90, 90 - a, 450 - a)
+  data.frame(x = x0 + d * cos(a / 180 * pi), 
+             y = y0+ d * sin(a / 180 * pi))
+}
+
+# Set up plotting device
+plot.new()
+par(mar=c(0, 0, 0, 0), oma=rep(0, 4),bg="white",col="white")
+plot.window(xlim=c(-2100, 2100), ylim=c(-2100, 2100), asp=1)
+
+# Add points
+points(with(pathTweets, get.coords(relativeBearing, km, 0, 0)), pch=19, cex=0.1, col='steelblue')
+##To instead plot a subset use something like this:
+##subset(pathTweets, dayOfYear=="299")
+
+# Semicircles with radii = 100 through 2000
+sapply(seq(200, 4000, 200), function(x) {
+  lines(get.coords(seq(0, 360, length.out=100), x, 0, 0),col="grey30")
+})
+
+# Horizontal line
+segments(-3000, 0, 3000, 0,,col="grey30")
+# Verticle line
+segments(0,-3000,0,3000,col="grey30")
+# Diagonal lines
+segments(-3000,-3000,3000,3000,lty=2,col="grey30")
+segments(-3000,3000,3000,-3000,lty=2,,col="grey30")
+
+# Plot white curves over grey curves and add text
+sapply(seq(400, 2000, 400), function(x) {
+  txt <- paste0(x, 'km')
+#  w <- strwidth(txt, cex=0.9)/2
+#  a <- atan(w/x)/pi*180
+#  lines(get.coords(seq(-a, a, length=5), x, 0, 0), 
+#        lwd=20, col="white")
+  text(0, x, txt, cex=0.8,col="grey30",font=2)
+})
+
+########################################################################################
+##Plot distance & bearing relative to hurricane eye: Entire Globe
+########################################################################################
+
+# Define function to calculate coordinates given distance and bearing
+get.coords <- function(a, d, x0, y0) {
+  a <- ifelse(a <= 90, 90 - a, 450 - a)
+  data.frame(x = x0 + d * cos(a / 180 * pi), 
+             y = y0+ d * sin(a / 180 * pi))
+}
+
+# Set up plotting device
+plot.new()
+par(mar=c(0, 0, 0, 0), oma=rep(0, 4),bg="white",col="white")
+plot.window(xlim=c(-20000, 20000), ylim=c(-20000, 20000), asp=1)
+
+# Add points
+points(with(pathTweets, get.coords(relativeBearing, km, 0, 0)), pch=19, cex=0.1, col='steelblue')
+
+# Semicircles with radii = 100 through 2000
+sapply(seq(1000, 20000, 1000), function(x) {
+  lines(get.coords(seq(0, 360, length.out=100), x, 0, 0),col="grey30")
+})
+
+# Horizontal line
+segments(-20000, 0, 20000, 0,,col="grey30")
+# Verticle line
+segments(0,-20000,0,20000,col="grey30")
+# Diagonal lines
+segments(-14000,-14000,14000,14000,lty=2,col="grey30")
+segments(-14000,14000,14000,-14000,lty=2,,col="grey30")
+
+# Plot white curves over grey curves and add text
+sapply(seq(5000, 20000, 5000), function(x) {
+  txt <- paste0(x, 'km')
+  #  w <- strwidth(txt, cex=0.9)/2
+  #  a <- atan(w/x)/pi*180
+  #  lines(get.coords(seq(-a, a, length=5), x, 0, 0), 
+  #        lwd=20, col="white")
+  text(0, x, txt, cex=0.8,col="grey30",font=2)
+})
+
+########################################################################################
+##NOTES, GUIDANCE & REFERENCES:
+##
+##http://stackoverflow.com/questions/22977453/plot-distance-and-bearing-in-r
+########################################################################################
+
+########################################################################################
+##Plot Tweet Frequency Histogram
 ########################################################################################
 
 ##Read CSV
@@ -72,15 +167,13 @@ library(lubridate)
 
 ##Tweets by Hour as a histogram
 y<-as.POSIXct(pathTweets$easternTime)
-p<-qplot(y,binwidth=60*60,fill=I('steelblue'),xlab="Day (East Coast)",ylab="Tweets Per Hour")
-p<-p+scale_x_datetime(major="1 day",
-                      minor="1 day",
-                      format="%e/%m/%Y",
-                      limits=c(as.POSIXct('2012/10/24'),
-                               as.POSIXct('2012/11/02')))
+p<-qplot(y,xlim=c(as.POSIXct('2012/10/24 20:00:00'),as.POSIXct('2012/11/05 19:00:00')),binwidth=60*60,fill=I('steelblue'),xlab="Day (East Coast)",ylab="Tweets Per Hour")
 print(p)
 
-##Tweets by hour as a frequency table
+########################################################################################
+##Create Frequency Table
+########################################################################################
+
 ##By day
 table(pathTweets$dayOfYear)
 ##By minute
@@ -88,15 +181,10 @@ table(pathTweets$utcTime)
 tweetFrequency <- table(pathTweets$easternTime)
 write.table(tweetFrequency,file="tweetFrequency.csv",row.names=FALSE,sep=",")
 
-library(chron)
-summary(pathTweets$dayOfYear)
-plot(hours(x=pathTweets$utcTime) + (pathTweets$dayOfYear - 298) * 24 )
+########################################################################################
+##Plot Distance by Frequency Histogram
+########################################################################################
 
-
-
-##table(pathTweets$utcTime,Rdate$wday) See page 103
-
-##Histogram of distances by frequency
 qplot(km, data=pathTweets, geom="histogram", binwidth=100, xlab="Distance from Hurricane (km)", ylab="Number of Tweets",fill=I('steelblue'))
 
 ########################################################################################
@@ -284,3 +372,21 @@ p + scale_x_continuous(expand = c(0, 0)) + scale_y_sqrt(expand = c(0, 0))
 ##flowingdata.com/2014/02/27/how-to-read-histograms-and-use-them-in-r/
 ##docs.ggplot2.org/0.9.3.1/geom_histogram.html
 ##www.cookbook-r.com/Graphs/Facets_(ggplot2)/
+
+
+
+
+##########################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
