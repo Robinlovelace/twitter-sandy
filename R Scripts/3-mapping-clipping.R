@@ -84,6 +84,8 @@ pathTweets[,32] <- as.factor(pathTweets[,32])
 pathTweets[,33] <- as.factor(pathTweets[,33])
 
 summary(pathTweets[c("continent", "subregion", "country")])
+library(knitr)
+kable(summary(pathTweets[c("continent", "subregion", "country")]), row.names=F)
 #!!! Nothing past B is labelled in the loop(!?), but doing it seperately works e.g.
 uSA <- countries[which(grepl("United States", as.character(countries$NAME))),] 
 usTweets <- gT[states,]
@@ -143,7 +145,8 @@ ggplot() +
   scale_fill_continuous(low="grey", high="red", name = "Number\nof Tweets\n(1000)") + 
   geom_point(data = usTweets@data, aes(tweet.lon, tweet.lat), alpha = 0.01) +
   theme_map
-ggsave("figure/US-overview-rl.png")
+ggsave("figure/US-overview-rl.png", height=9, width=12)
+ggsave("figure/US-overview-rl-lowres.png", height=9, width=12, dpi=50)
 
 ############
 # Chloropleth map of counties
