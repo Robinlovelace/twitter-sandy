@@ -1,24 +1,24 @@
-##Read CSV
+## Read CSV
 pathTweets <- read.csv("pathTweets.csv",header=T)
 
 ###################
-##For US States - Working
+## For US States - Working
 ###################
 
-##Import state shape files and ensure correct projection
+## Import state shape files and ensure correct projection
 library(rgdal)
 states <- readOGR(".", "states")
 summary(states)
 states <- spTransform(states, CRS("+init=epsg:4326"))
 states <- states[-which(grepl("Alask|Haw", as.character(states$STATE_NAME))),]
 
-#Ensure tweet coordinates share projection of state shape files
+# Ensure tweet coordinates share projection of state shape files
 gT <- SpatialPointsDataFrame(coords=matrix(c(pathTweets$tweet.lon, pathTweets$tweet.lat), 
                                 ncol=2),data=pathTweets[, -c(2, 3)], proj4string=CRS("+init=epsg:4326"))
 
-#Create a loop to identify state where each tweet originated & add name to dataframe
+# Create a loop to identify state where each tweet originated & add name to dataframe
 pathTweets$state <- NA
-pathTweets$stateAbbr <- NA
+pathTweets$stateAbbr <- NA # abbreviated state name
 
 for(i in 1:nrow(states)){
   stateI <- states[which(grepl(states@data$STATE_NAME[i], as.character(states$STATE_NAME))),]
@@ -28,17 +28,17 @@ for(i in 1:nrow(states)){
 }
 
 #################
-##For US Counties - Working; Source: http://forums.arcgis.com/threads/26330-Where-can-I-find-a-shapefile-with-all-US-counties-and-FIPS-code-for-each
+## For US Counties - Working; Source: http://forums.arcgis.com/threads/26330-Where-can-I-find-a-shapefile-with-all-US-counties-and-FIPS-code-for-each
 #################
 
-##Import counties shape files and ensure correct projection
+## Import counties shape files and ensure correct projection
 library(rgdal)
 counties <- readOGR(".", "UScounties")
 summary(counties)
 data.frame(counties@data$FIPS)
 counties <- spTransform(counties, CRS("+init=epsg:4326"))
 
-#Create a loop to identify county where each tweet originated & add name to dataframe
+# Create a loop to identify county where each tweet originated & add name to dataframe
 pathTweets$county <- NA
 pathTweets$FIPSCode <- NA
 
@@ -49,10 +49,10 @@ for(i in 1:nrow(counties)){
   pathTweets$FIPSCode[ as.integer(row.names(countyTweets)) ] <- as.character(counties$FIPS[i])
 }
 
-#For census tract: https://www.census.gov/geo/maps-data/data/tiger.html
+# For census tract: https://www.census.gov/geo/maps-data/data/tiger.html
 
 ###################
-##For Countries - Not Working; Shape files from Natural Earth: http://www.naturalearthdata.com/downloads/
+## For Countries - Not Working; Shape files from Natural Earth: http://www.naturalearthdata.com/downloads/
 ###################
 
 ##Import country shape files and ensure correct projection
@@ -64,24 +64,29 @@ countries <- spTransform(countries, CRS("+init=epsg:4326"))
 
 #Ensure tweet coordinates share projection of state shape files
 gT <- SpatialPointsDataFrame(coords=matrix(c(pathTweets$tweet.lon, pathTweets$tweet.lat), 
-                                           ncol=2),data=pathTweets[, -c(2, 3)], proj4string=CRS("+init=epsg:4326"))
+                                           ncol=2),data=pathTweets, proj4string=CRS("+init=epsg:4326"))
 
 #Create a loop to identify state where each tweet originated & add name to dataframe
 pathTweets$continent <- NA #CONTINENT
 pathTweets$subregion <- NA #SUBREGION
 pathTweets$country <- NA #NAME
 
-for(i in 1:255){
-  countryI <- NULL
-  countryI <- countries[which(grepl(countries@data$NAME[i], as.character(countries$NAME))),]
-  countryTweets <- gT[countryI,]
+for(i in 1:nrow(countries)){
+  countryI <- countries[i,]
+  countryTweets <- gT[countryI,] # not necessary - this re-writes every time - please delete
   pathTweets$continent[ as.integer(row.names(countryTweets)) ] <- as.character(countries$CONTINENT[i])
   pathTweets$subregion[ as.integer(row.names(countryTweets)) ] <- as.character(countries$SUBREGION[i])
   pathTweets$country[ as.integer(row.names(countryTweets)) ] <- as.character(countries$NAME[i])
 }
+names(pathTweets)
+pathTweets[,31] <- as.factor(pathTweets[,31])
+pathTweets[,32] <- as.factor(pathTweets[,32])
+pathTweets[,33] <- as.factor(pathTweets[,33])
+
+summary(pathTweets[c("continent", "subregion", "country")])
 #!!! Nothing past B is labelled in the loop(!?), but doing it seperately works e.g.
 uSA <- countries[which(grepl("United States", as.character(countries$NAME))),] 
-usTweets <- gT[uSA,]
+usTweets <- gT[states,]
 pathTweets$country[ as.integer(row.names(usTweets)) ] <- "United States"
 
 #To see list of countries:
@@ -95,24 +100,25 @@ library(maps)
 library(ggplot2)
 library(plyr)
 
-#Map tweets by state name
+# Map tweets by state name
 stateSubset <- subset(pathTweets, state == "California") 
 plot(states)
 points(stateSubset$tweet.lon, stateSubset$tweet.lat, col="green",cex=.6)
-#Or plot just the individual state:
+# Or plot just the individual state:
 plot(states[which(grepl("California", as.character(states$STATE_NAME))),])
 points(stateSubset$tweet.lon, stateSubset$tweet.lat, col="green",cex=.6)
+qplot(long, lat, data = stateSubset, group = group, fill = log(Freq),geom = "polygon")
 
-#Map tweets by county FIPS code
+# Map tweets by county FIPS code
 countySubset <- subset(pathTweets, FIPSCode == "27137") 
 plot(counties)
 points(countySubset$tweet.lon, countySubset$tweet.lat, col="green",cex=.6)
-#Or plot just the individual county:
+# Or plot just the individual county:
 plot(counties[which(grepl("27137", as.character(counties$FIPS))),])
 points(countySubset$tweet.lon, countySubset$tweet.lat, col="green",cex=.6)
 
 ############
-#Chloropleth map of States; See https://gist.github.com/cdesante/4252133
+# Chloropleth map of States; See https://gist.github.com/cdesante/4252133
 ############
 
 stateTweetFreq <- data.frame(table(pathTweets$state))
@@ -123,14 +129,29 @@ choro <- merge(statesX, stateTweetFreq, sort = FALSE, by = "region")
 choro <- choro[order(choro$order), ]
 p <- qplot(long, lat, data = choro, group = group, fill = log(Freq),
         geom = "polygon")
+p
 p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
 
+# Make more attractive plot
+theme_map <- theme_classic() + theme(axis.line = element_blank(),
+                                     axis.title = element_blank(),
+                                     axis.ticks = element_blank(),
+                                     axis.text = element_blank()) 
+ggplot() +
+  geom_polygon(data = choro, aes(long, lat, group = group, fill = Freq/1000)) + 
+  geom_path(data = choro, aes(long, lat, group = group)) +
+  scale_fill_continuous(low="grey", high="red", name = "Number\nof Tweets\n(1000)") + 
+  geom_point(data = usTweets@data, aes(tweet.lon, tweet.lat), alpha = 0.01) +
+  theme_map
+ggsave("figure/US-overview-rl.png")
+
 ############
-#Chloropleth map of counties
+# Chloropleth map of counties
 ############
 countyTweetFreq <- data.frame(table(pathTweets$FIPSCode))
 countyTweetFreq <- rename(countyTweetFreq, c("Var1"="fips", "Freq"="Freq"))
-#Next, need to create a df of map data
+
+# Next, need to create a df of map data
 countiesX <- map_data('county',region=".",exact=FALSE)
 #This is lacking fips codes which ideally should be added as county names
 #are not all unique
@@ -139,15 +160,20 @@ county.fips <- rename(county.fips, c("counties.data.NAME"="subregion","counties.
 county.fips$region <- tolower(county.fips$region)
 county.fips$subregion <- tolower(county.fips$subregion)
 countiesX <- merge(countiesX, county.fips, by=c("subregion","region"),all.x=TRUE)
+
 #Note that 1,400 rows of the countiesX df did not correspond to county.fips so have NA's - Need to sort
-choroC <- merge(countiesX, countyTweetFreq,by ="fips",all.x=TRUE)
+choroC <- merge(countiesX, countyTweetFreq, by ="fips",all.x=TRUE)
 choroC <- choroC[order(choroC$order), ]
 p <- qplot(long, lat, data = choroC, group = group, fill = log(Freq),geom = "polygon")
 p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
 p
 
+p + scale_fill_gradient(low = "green", high = "red",
+                        name="Num.\nTweets\n(log(n)")
+
+
 ##Plot individual state
-stateSubset <- subset(choroC, region=="florida")
+stateSubset <- subset(choroC, region=="california")
 qplot(long, lat, data = stateSubset, group = group, fill = log(Freq),geom = "polygon")
 
 #Experimental code (ignore):
