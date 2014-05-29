@@ -125,7 +125,8 @@ choro <- merge(statesX, stateTweetFreq, sort = FALSE, by = "region")
 choro <- choro[order(choro$order), ]
 p <- qplot(long, lat, data = choro, group = group, fill = log(Freq),
         geom = "polygon")
-p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
+p <- p + scale_fill_gradient(low="red", high="green", name = "N. Tweets")
+p
 
 ############
 #2.3 Chloropleth map of counties
