@@ -132,8 +132,13 @@ choro <- merge(statesX, stateTweetFreq, sort = FALSE, by = "region")
 choro <- choro[order(choro$order), ]
 p <- qplot(long, lat, data = choro, group = group, fill = log(Freq),
         geom = "polygon")
+<<<<<<< HEAD
+p <- p + scale_fill_gradient(low="red", high="green", name = "N. Tweets")
+p
+=======
 p
 p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
+>>>>>>> FETCH_HEAD
 
 # Make more attractive plot
 theme_map <- theme_classic() + theme(axis.line = element_blank(),
