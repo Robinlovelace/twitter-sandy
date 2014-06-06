@@ -10,12 +10,32 @@ point data, to create choropleth maps summarising twitter data.
 library(rgdal)
 states <- readOGR(".", "states")
 summary(states)
+plot(states)
+head(states$STATE_NAME)
+states@data
+
 states <- spTransform(states, CRS("+init=epsg:4326"))
 states <- states[-which(grepl("Alask|Haw", as.character(states$STATE_NAME))),]
 tweets <- read.csv("1pSample.txt")
+bbNY <- bbox(states[grepl("New York", as.character(states$STATE_NAME)),])
+plot(states[grepl("New York", as.character(states$STATE_NAME)),])
 plot(states)
+plot(states, xlim=bbNY[1,], ylim=bbNY[2,])
+points(bbNY, pch = 3)
+plot(states[grepl("New York", as.character(states$STATE_NAME)),], col = "green", add = T)
 points(tweets$lon, tweets$lat, col="blue")
 ```
+
+Plotting with ggmap
+
+```{r}
+library(ggmap)
+qmap(location="New York") +
+geom_point(aes(tweets$lon, tweets$lat))
+
+ggsave("ny.png")
+```
+
 
 Convert the tweets into a spatial (S4) class
 

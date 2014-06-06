@@ -1,6 +1,12 @@
 Analysis of Sandy Tweets paper
 ========================================================
 
+```{r, echo=FALSE}
+# TODO RL: space time bounds of density + hurricane impacts (cumulative) + counties level data
+# TODO NR: word analysis sorted lite + add to the article
+```
+
+
 ## Introduction - Research questions
 
 - What proportion of the population tweeted about Sandy in different areas? 
@@ -54,4 +60,6 @@ tweets originating from the USA. This subset of the data is summarised graphical
 ### Spatio-temporal analysis
 
 ## Discussion and conclustions
+
+
 
