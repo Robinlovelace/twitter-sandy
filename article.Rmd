@@ -23,6 +23,18 @@ Relation to previous work
 
 ## Data and methods
 
+In order to track how different topics spread over time and
+space as the hurricane advances, spatio-temporal clusting of tweets
+was used ([Kisilevich et al., 2010](http://kdd.isti.cnr.it/~nanni/papers/DMKD_Handbook_STClustering_submitted.pdf)).
+A number of techniques are available to estimate such 'moving clusters', ranging from
+dot density algorithms applied over multiple time slices
+- referred to as 'MC1' - to more sophisticated algorithms
+designed to make use of the predictable behaviour of mass movement ([Kalnis et al., 2005](http://f3.tiera.ru/2/Cs_Computer%20science/CsLn_Lecture%20notes/A/Advances%20in%20Spatial%20and%20Temporal%20Databases,%209%20conf.,%20SSTD%202005%28LNCS3633,%20Springer,%202005%29%28ISBN%203540281274%29%28443s%29.pdf#page=374)). 
+Although the datasets used in this paper may be deemed as 'large',
+code efficiency is not a prime concern as the clustering need not
+run repeatedly or in real time. Thus we use the MC1 algorithm for spatial clustering of
+different tweet topics.
+
 ## Results
 
 ### Descriptive statistics of hurricane tweets
@@ -61,5 +73,9 @@ tweets originating from the USA. This subset of the data is summarised graphical
 
 ## Discussion and conclustions
 
+## References
 
+Kalnis, P., Mamoulis, N., & Bakiras, S. (2005). On Discovering Moving Clusters in Spatio-temporal Data. In Proceedings of the 9th International Conference on Advances in Spatial and Temporal Databases (pp. 364–381). doi:10.1007/11535331 21
+
+Kisilevich, S., Mansmann, F., Nanni, M., & Rinzivillo, S. (2010). Spatio-Temporal Clustering: a Survey. Data Mining and Knowledge Discovery Handbook, 1–22. doi:10.1007/978-0-387-09823-4
 
