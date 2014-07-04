@@ -1,5 +1,5 @@
 ## Read CSV
-pathTweets <- read.csv("pathTweets.csv",header=T)
+pathTweets <- read.csv("1pSample.txt",header=T)
 
 ###################
 ##1.1 For US States - Working
@@ -7,7 +7,7 @@ pathTweets <- read.csv("pathTweets.csv",header=T)
 
 ## Import state shape files and ensure correct projection
 library(rgdal)
-states <- readOGR(".", "states")
+states <- readOGR("data/", "states")
 summary(states)
 states <- spTransform(states, CRS("+init=epsg:4326"))
 states <- states[-which(grepl("Alask|Haw", as.character(states$STATE_NAME))),]
@@ -15,16 +15,18 @@ states <- states[-which(grepl("Alask|Haw", as.character(states$STATE_NAME))),]
 # Ensure tweet coordinates share projection of state shape files
 gT <- SpatialPointsDataFrame(coords=matrix(c(pathTweets$tweet.lon, pathTweets$tweet.lat), 
                                 ncol=2),data=pathTweets[, -c(2, 3)], proj4string=CRS("+init=epsg:4326"))
+# pathTweets <- pathTweets[ !is.na(as.numeric(as.character(pathTweets$lon))), ]
+# gT <- SpatialPointsDataFrame(coords=matrix(c(as.numeric(as.character(pathTweets$lon)), as.numeric(as.character(pathTweets$lat))), ncol=2),data=pathTweets[, -c(2, 3)], proj4string=CRS("+init=epsg:4326"))
 
 # Create a loop to identify state where each tweet originated & add name to dataframe
 pathTweets$state <- NA
 pathTweets$stateAbbr <- NA # abbreviated state name
 
 for(i in 1:nrow(states)){
-  stateI <- states[which(grepl(states@data$STATE_NAME[i], as.character(states$STATE_NAME))),]
-  stateTweets <- gT[stateI,]
-  pathTweets$state[ as.integer(row.names(stateTweets)) ] <- as.character(states$STATE_NAME[i])
-  pathTweets$stateAbbr[ as.integer(row.names(stateTweets)) ] <- as.character(states$STATE_ABBR[i])
+  stateTweets <- gT[states[i, ],]
+  pathTweets$state[ pathTweets$X %in% stateTweets$X ] <-
+    as.character(states$STATE_NAME[i])
+  pathTweets$stateAbbr[ pathTweets$X %in% stateTweets$X ] <- as.character(states$STATE_ABBR[i])
 }
 
 #################
@@ -33,21 +35,45 @@ for(i in 1:nrow(states)){
 
 ## Import counties shape files and ensure correct projection
 library(rgdal)
-counties <- readOGR(".", "UScounties")
+counties <- readOGR("data", "UScounties")
 summary(counties)
 data.frame(counties@data$FIPS)
 counties <- spTransform(counties, CRS("+init=epsg:4326"))
+plot(counties)
+counties <- counties[ -grep("Alaska", counties$STATE_NAME), ]
+counties <- counties[ -grep("Haw", counties$STATE_NAME), ]
+plot(counties)
 
 # Create a loop to identify county where each tweet originated & add name to dataframe
 pathTweets$county <- NA
 pathTweets$FIPSCode <- NA
+row.names(gT) <- 1:nrow(gT)
+counties$ntweets <- 0 # setup n. tweets variable
 
 for(i in 1:nrow(counties)){
-  countyI <- counties[which(grepl(counties@data$FIPS[i], as.character(counties$FIPS))),]
-  countyTweets <- gT[countyI,]
-  pathTweets$county[ as.integer(row.names(countyTweets)) ] <- as.character(counties$NAME[i])
+  countyTweets <- gT[counties[i,],]
+  counties$ntweets[i] <- nrow(countyTweets)
+  pathTweets$county[ as.integer(row.names(countyTweets)) ] <- 
+    rep(as.character(counties$NAME[i]), times = nrow(countyTweets))
   pathTweets$FIPSCode[ as.integer(row.names(countyTweets)) ] <- as.character(counties$FIPS[i])
 }
+
+counties$id <- counties$NAME
+
+# plotting
+library(ggplot2)
+library(dplyr)
+sf <- fortify(counties, region="id")
+head(sf)
+head(counties@data)
+sf <- inner_join(sf, counties@data, by="id")
+head(sf)
+
+ggplot(data = sf) + geom_polygon(aes(long, lat, group = group, fill = ntweets)) +
+  geom_path(aes(long, lat, group = group, fill = ntweets)) +
+  xlim(c(-90, -70)) + ylim(c(30, 40)) + 
+  geom_point(data = gT@data, aes(lat, lon)) +
+  scale_fill_continuous(low = "green", high = "red")
 
 # For census tract: https://www.census.gov/geo/maps-data/data/tiger.html
 

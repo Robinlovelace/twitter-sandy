@@ -8,7 +8,7 @@ point data, to create choropleth maps summarising twitter data.
 
 ```{r}
 library(rgdal)
-states <- readOGR(".", "states")
+states <- readOGR("data/", "states")
 summary(states)
 plot(states)
 head(states$STATE_NAME)
@@ -30,6 +30,7 @@ Plotting with ggmap
 
 ```{r}
 library(ggmap)
+ggmap(get_map("Leeds"))
 qmap(location="New York") +
 geom_point(aes(tweets$lon, tweets$lat))
 
