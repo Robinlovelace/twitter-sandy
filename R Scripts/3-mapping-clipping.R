@@ -13,8 +13,10 @@ states <- spTransform(states, CRS("+init=epsg:4326"))
 states <- states[-which(grepl("Alask|Haw", as.character(states$STATE_NAME))),]
 
 # Ensure tweet coordinates share projection of state shape files
+pathTweets$tweet.lat <- as.numeric(as.character(pathTweets$tweet.lat))
+pathTweets$tweet.lon <- as.numeric(as.character(pathTweets$tweet.lon))
 gT <- SpatialPointsDataFrame(coords=matrix(c(pathTweets$tweet.lon, pathTweets$tweet.lat), 
-                                ncol=2),data=pathTweets[, -c(2, 3)], proj4string=CRS("+init=epsg:4326"))
+                                ncol=2),data=pathTweets, proj4string=CRS("+init=epsg:4326"))
 # pathTweets <- pathTweets[ !is.na(as.numeric(as.character(pathTweets$lon))), ]
 # gT <- SpatialPointsDataFrame(coords=matrix(c(as.numeric(as.character(pathTweets$lon)), as.numeric(as.character(pathTweets$lat))), ncol=2),data=pathTweets[, -c(2, 3)], proj4string=CRS("+init=epsg:4326"))
 
@@ -58,7 +60,11 @@ for(i in 1:nrow(counties)){
   pathTweets$FIPSCode[ as.integer(row.names(countyTweets)) ] <- as.character(counties$FIPS[i])
 }
 
+hist(counties$ntweets)
+counties$ntweets[ counties$ntweets < 1 ] <- 1
+
 counties$id <- counties$NAME
+hPath <- SpatialPoints(matrix(c(hurricanePath$hurricanePath.lon, hurricanePath$hurricanePath.lat), ncol=2))
 
 # plotting
 library(ggplot2)
@@ -66,15 +72,28 @@ library(dplyr)
 sf <- fortify(counties, region="id")
 head(sf)
 head(counties@data)
-sf <- inner_join(sf, counties@data, by="id")
+# sf <- inner_join(sf, counties@data, by="id")
+sf <- join(sf, counties@data, by = "id")
 head(sf)
 
-ggplot(data = sf) + geom_polygon(aes(long, lat, group = group, fill = ntweets)) +
-  geom_path(aes(long, lat, group = group, fill = ntweets)) +
-  xlim(c(-90, -70)) + ylim(c(30, 40)) + 
-  geom_point(data = gT@data, aes(lat, lon)) +
-  scale_fill_continuous(low = "green", high = "red")
+ggplot() + geom_polygon(data = sf, aes(long, lat, group = group, fill = ntweets)) +
+   geom_path(data = statesX, aes(long, lat, group = group)) +
+#   xlim(c(-90, -70)) + ylim(c(30, 40)) + 
+  xlim(range(sf$long)) + ylim(range(sf$lat)) + 
+#   geom_point(data = gT@data, aes(tweet.lon, tweet.lat), alpha = 0.2, size = 0.8, color = "darkred") +
+  scale_fill_gradient(low = "white", high = "red", name = "N. Tweets" 
+#                             , colours = c("white", "red", "purple", values = c(1, 100, 10000)) # for gradientn
+#                        , midpoint = 100
+                       , limits = c(0.9, 5000)
+                       , trans = "log"
+                       , breaks = c(1, 10, 100, 1000)
+                        , labels <- c("<1", 10, 100, 1000)
+) +
+  geom_point(aes(coordinates(hPath)[,1], coordinates(hPath)[,2])) +
+  coord_map(projection= "mercator") + 
+  theme_map
 
+ggsave("figure/counties.png")
 # For census tract: https://www.census.gov/geo/maps-data/data/tiger.html
 
 ###################
@@ -147,7 +166,7 @@ plot(counties[which(grepl("27137", as.character(counties$FIPS))),])
 points(countySubset$tweet.lon, countySubset$tweet.lat, col="green",cex=.6)
 
 ############
-#2.2 Chloropleth map of States; See https://gist.github.com/cdesante/4252133
+# 2.2 Chloropleth map of States; See https://gist.github.com/cdesante/4252133
 ############
 
 stateTweetFreq <- data.frame(table(pathTweets$state))
@@ -158,13 +177,12 @@ choro <- merge(statesX, stateTweetFreq, sort = FALSE, by = "region")
 choro <- choro[order(choro$order), ]
 p <- qplot(long, lat, data = choro, group = group, fill = log(Freq),
         geom = "polygon")
-<<<<<<< HEAD
+
 p <- p + scale_fill_gradient(low="red", high="green", name = "N. Tweets")
 p
-=======
-p
+
+
 p + scale_fill_gradient(low = "#FFFFFF", high = "steelblue")
->>>>>>> FETCH_HEAD
 
 # Make more attractive plot
 theme_map <- theme_classic() + theme(axis.line = element_blank(),
